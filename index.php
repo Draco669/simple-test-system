@@ -127,9 +127,9 @@ endif;
         <main>
             <div class="selection-container">
                 <h2>請選擇你要練習的證照項目</h2>
-                <a href="quiz.php?type=web" class="quiz-option">網站管理-賴正男</a>
-                <a href="quiz.php?type=project" class="quiz-option">專案管理-劉勇志</a>
-                <a href="quiz.php?type=linux" class="quiz-option">linux系統-賴正男</a>
+                <a href="quiz.php?type=web" class="quiz-option">網站管理</a>
+                <a href="quiz.php?type=project" class="quiz-option">專案管理</a>
+                <a href="quiz.php?type=linux" class="quiz-option">linux系統</a>
                 <a href="quiz.php?type=databasee" class="quiz-option">暫無</a>
                 </div>
         </main>
