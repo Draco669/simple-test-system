@@ -110,6 +110,7 @@ $page_title = $quiz_type_name . ' - 測驗準備';
     <script>
     const currentQuizType = '<?php echo htmlspecialchars($quiz_type); ?>';
 
+    // fetchQuestions 函數保持不變，因為它被 function.js 的 startQuiz 使用
     function fetchQuestions(callback) {
         fetch(`api/get_questions.php?type=${currentQuizType}`)
             .then(res => {
@@ -117,12 +118,11 @@ $page_title = $quiz_type_name . ' - 測驗準備';
                 return res.json();
             })
             .then(data => {
-                // 確保 data.data 存在且是陣列，否則使用 data 本身 (如果後端直接回傳陣列) 或空陣列
                 const questionsArray = (data && Array.isArray(data.data)) ? data.data : (Array.isArray(data) ? data : []);
-                if (data && data.error && !questionsArray.length) { // 如果有錯誤且沒有題目數據
+                if (data && data.error && !questionsArray.length) {
                      callback({error: data.error, data: []});
                 } else {
-                    callback({data: questionsArray, error: null}); // 確保回傳的 data 是陣列
+                    callback({data: questionsArray, error: null});
                 }
             })
             .catch(error => {
@@ -131,28 +131,14 @@ $page_title = $quiz_type_name . ' - 測驗準備';
             });
     }
 
+    // checkAnswer 函數不再需要由 quiz.php 提供給 function.js 進行單題驗證的 fetch
+    // 因為 function.js 中的 submitQuiz 會直接處理批量驗證的 fetch
+    // 您可以安全地移除或註解掉 quiz.php 中的 checkAnswer 函數
+    /*
     function checkAnswer(questionId, userAnswer, callback) {
-        fetch(`api/check_answer.php`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({id: questionId, answer: userAnswer, quiz_type: currentQuizType })
-        })
-        .then(res => {
-            if (!res.ok) return res.text().then(text => { throw new Error(`驗證答案失敗 (${res.status}): ${text.substring(0,100)}`) });
-            return res.json();
-        })
-        .then(data => {
-             if (data && data.error) {
-                callback({ correct: false, error: data.error, actualAnswer: data.actualAnswer || [] });
-             } else {
-                callback(data);
-             }
-        })
-        .catch(error => {
-            console.error('Check answer error:', error);
-            callback({ correct: false, error: error.message, actualAnswer: [] });
-        });
+        // ... 原來的 fetch 邏輯 ...
     }
+    */
     </script>
     <script src="function.js"></script>
 </body>
