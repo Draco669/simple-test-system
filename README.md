@@ -23,19 +23,23 @@
 
 ## 檔案結構
 
-建議的檔案結構如下：
-your_project_root/ (例如：htdocs/test/ 或 public_html/quiz_system/)
-├── index.php            # 登入頁面 & 測驗類型選擇頁面
-├── quiz.php             # 測驗進行頁面
-├── function.js          # 前端主要的 JavaScript 邏輯
-├── styles.css           # CSS 樣式表
-├── questions_web.php  # 網站管理證照題庫 (含答案)
-├── questions_project.php   # 專案管理證照題庫 (含答案)
-├── questions_linux.php   # linux證照題庫 (含答案)
-│
-└── api/                 # 後端 API 腳本資料夾
-    ├── get_questions.php  # 提供題目的 API (不含答案)
-    └── check_answer.php   # **驗證所有已答題目答案的 API**
+* **`/` (專案根目錄)**
+    * `index.php` - 登入頁面 & 測驗類型選擇頁面
+    * `quiz.php` - 測驗進行頁面
+    * `function.js` - 前端主要的 JavaScript 邏輯
+    * `styles.css` - CSS 樣式表
+    * `README.md` - 系統說明文件 (即本檔案)
+    * `questions_web.php` - 網站管理證照題庫 (PHP 陣列)
+    * `questions_project.php` - 專案管理證照題庫 (PHP 陣列)
+    * `questions_linux.php` - Linux 系統證照題庫 (PHP 陣列)
+    * `questions_database.php` - 資料庫管理證照題庫 (PHP 陣列)
+    * **(可選)** `images/` - 如果題目中引用的圖片存放在此資料夾
+        * `2-14(A).png`
+        * `...其他圖片檔案...`
+
+* **`/api/`** - 後端 API 腳本資料夾
+    * `get_questions.php` - 提供題目的 API (不含答案)
+    * `check_answer.php` - 驗證所有已答題目答案的 API
 
 
 ## 環境需求
