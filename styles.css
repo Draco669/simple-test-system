@@ -617,9 +617,7 @@ button:disabled .spinner {
 .review-item.incorrect .review-question-text {
     color: #721c24; /* 深紅色，用於錯誤題目的問題文字 */
 }
-.review-item.correct .review-question-text {
-    /* color: #155724; */ /* 如果也顯示正確題目，可以這樣標示 */
-}
+
 
 .review-answers .user-answer-incorrect {
     color: #dc3545; /* 錯誤答案的顏色 */
