@@ -54,7 +54,7 @@ h1 {
 main {
     background-color: #fff;
     border-radius: 8px;
-    padding: 30px;
+    padding: 20px;
     margin-bottom: 20px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     min-height: 400px;
@@ -496,4 +496,289 @@ footer {
 }
 #login-btn:hover {
     background: #0056b3;
+}
+/* --- Toast Message Styles --- */
+#toast-message-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000; /* 確保在最上層 */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.toast {
+    padding: 12px 20px;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 1em;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    opacity: 1;
+    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+    transform: translateX(0);
+    min-width: 250px;
+    text-align: left;
+}
+
+.toast.fade-out {
+    opacity: 0;
+    transform: translateX(100%);
+}
+
+.toast-success {
+    background-color: #28a745; /* 綠色 */
+}
+
+.toast-error {
+    background-color: #dc3545; /* 紅色 */
+}
+
+.toast-warning {
+    background-color: #ffc107; /* 黃色 */
+    color: #333;
+}
+
+.toast-info {
+    background-color: #17a2b8; /* 藍色 */
+}
+
+/* --- Loading Spinner for Buttons --- */
+.spinner {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* 按鈕禁用時的樣式可以更明確 */
+button:disabled, .quiz-buttons button:disabled {
+    background-color: #bdc3c7 !important; /* 使用 !important 確保覆蓋 */
+    color: #7f8c8d !important;
+    cursor: not-allowed !important;
+    opacity: 0.7;
+}
+/* 確保 spinner 在禁用按鈕上顏色也合適 (如果背景不是白色) */
+button:disabled .spinner {
+    border-top-color: #7f8c8d;
+    border-left-color: rgba(127, 140, 141, 0.3);
+    border-right-color: rgba(127, 140, 141, 0.3);
+    border-bottom-color: rgba(127, 140, 141, 0.3);
+}
+
+
+/* --- Option Click Effect --- */
+#options-container .option {
+    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, transform 0.15s ease;
+}
+
+#options-container .option:hover:not(.selected) {
+    background-color: #e9ecef; /* 輕微背景變化 */
+    border-color: #ced4da;
+    transform: translateX(3px);
+}
+
+#options-container .option.selected {
+    background-color: #d1e7fd; /* 柔和的藍色 */
+    border-color: #0d6efd;
+    transform: translateX(0); /* 選擇後恢復 */
+}
+
+
+/* --- Progress Bar (Optional Visual) --- */
+/* 需在 HTML 中添加 <div class="progress-bar-container"><div id="progress-bar-fill"></div></div> */
+.progress-bar-container {
+    width: 100%;
+    background-color: #e9ecef;
+    border-radius: .25rem;
+    margin-bottom: 15px; /* 與 #progress 元素間距 */
+    height: 10px; /* 設定一個高度 */
+}
+
+#progress-bar-fill {
+    height: 100%; /* 與容器同高 */
+    width: 0%; /* 初始寬度 */
+    background-color: #0d6efd;
+    border-radius: .25rem;
+    transition: width .3s ease-in-out;
+}
+
+/* --- Review Item Enhancements --- */
+.review-item.incorrect .review-question-text {
+    color: #721c24; /* 深紅色，用於錯誤題目的問題文字 */
+}
+.review-item.correct .review-question-text {
+    /* color: #155724; */ /* 如果也顯示正確題目，可以這樣標示 */
+}
+
+.review-answers .user-answer-incorrect {
+    color: #dc3545; /* 錯誤答案的顏色 */
+    font-weight: bold;
+    text-decoration: line-through;
+}
+
+.review-options .user-selected-wrong {
+    background-color: #f8d7da; /* 錯誤選擇的選項背景 */
+    border-left: 3px solid #dc3545;
+    padding-left: 5px;
+    display: inline-block; /* 使背景和邊框生效 */
+    width: calc(100% - 8px); /* 調整寬度以適應 padding 和 border */
+}
+.review-options .correct-option-highlight {
+    background-color: #d1e7dd; /* 正確選項背景 */
+    border-left: 3px solid #28a745;
+    font-weight: bold;
+    padding-left: 5px;
+    display: inline-block;
+    width: calc(100% - 8px);
+}
+
+.review-status .status-correct {
+    color: #28a745;
+    font-weight: bold;
+}
+.review-status .status-incorrect {
+    color: #dc3545;
+    font-weight: bold;
+}
+.review-explanation {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-left: 3px solid #6c757d;
+    font-size: 0.95em;
+}
+
+/* --- Controls (Header) Layout Adjustment --- */
+header .controls {
+    display: flex;
+    align-items: center; /* 垂直居中 */
+    justify-content: center; /* 水平居中 (如果按鈕在同一行) */
+    gap: 15px; /* 按鈕間距 */
+    flex-wrap: wrap; /* 允許換行 */
+    margin-top: 10px; /* 與標題間距 */
+}
+#progress, #timer {
+    padding: 5px 10px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    font-size: 1em; /* 調整字體大小與按鈕一致 */
+}
+@media (max-width: 768px) {
+    header .controls {
+        flex-direction: column; /* 小螢幕時垂直排列 */
+        align-items: stretch; /* 按鈕寬度填滿 */
+    }
+    header .controls button,
+    header .controls span {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* 調整按鈕樣式，使其視覺上更統一 */
+.quiz-buttons button, #reviewBtn, #restartBtn, #backToResultsBtn, #jumpBtn {
+    padding: 8px 18px; /* 統一 padding */
+    font-size: 1em;    /* 統一字體大小 */
+    /* 其他樣式保持 */
+}
+#startBtn { /* 開始按鈕可能需要大一點 */
+    padding: 12px 25px;
+    font-size: 1.1em;
+}
+
+/* 跳題輸入框樣式 */
+#jumpInput {
+    padding: 8px 10px;
+    font-size: 1em;
+    /* ... 其他您已有的樣式 ... */
+}
+/* 新增：固定在畫面右上角的導航按鈕容器樣式 */
+.fixed-nav-buttons {
+    position: fixed;     /* 相對於瀏覽器視窗固定定位 */
+    top: 15px;           /* 距離視窗頂部 15px */
+    right: 20px;          /* 距離視窗右側 20px */
+    z-index: 999;        /* 確保在其他內容之上 */
+    display: flex;
+    gap: 10px;
+}
+
+/* 導航按鈕樣式 (可以保持和之前 .nav-button 一樣) */
+.nav-button { /* 確保這個 class 仍然被使用 */
+    display: inline-block;
+    padding: 8px 15px;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 0.9em;
+    transition: background-color 0.3s;
+    border: 1px solid transparent;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1); /* 可以加個小陰影增加層次感 */
+}
+
+.nav-button:hover {
+    background-color: #0056b3;
+    color: white;
+}
+
+/* 特殊按鈕樣式 (如果需要) */
+.fixed-nav-buttons a.nav-button:first-child { /* 假設返回選擇是第一個 */
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+.fixed-nav-buttons a.nav-button:first-child:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+
+/* 由於按鈕現在是 fixed 定位，可能需要為 body 或 .container 添加一些 padding-top
+   以防止按鈕覆蓋頁面頂部內容，但如果按鈕本身就在頁面空白區域則不需要。
+   從您的截圖看，quiz.php 的內容是從 header 開始的，header 上方沒有其他內容，
+   所以 fixed 的按鈕應該不會覆蓋 header 的 h1。
+   但如果按鈕和 h1 重疊，可以考慮為 .container 增加 margin-top 或 body 增加 padding-top。
+*/
+/* 例如：
+body {
+    padding-top: 60px; /* 假設按鈕高度加上間距約 50-60px，確保內容不被遮擋 
+}*/
+.fixed-nav-buttons {
+    top: 15px; /* 調整後，相對於新的 body padding */
+    right: 20px;
+}
+或者，如果只想讓 .container 下移：
+.container {
+    margin-top: 60px; /* 確保 .container 不會被 fixed 按鈕遮擋 */
+}
+*/
+
+/* 移除之前為 header 添加的 relative 定位和額外 padding-top (如果不再需要) */
+header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 30px;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    /* position: relative; */ /* 如果按鈕已移出，這個可能不再需要 */
+    /* padding-top: 50px; */  /* 如果按鈕已移出，這個可能不再需要 */
+}
+
+header h1 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+    text-align: center;
+    width: 100%;
 }

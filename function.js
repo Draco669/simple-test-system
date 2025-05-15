@@ -1,9 +1,9 @@
-// function.js (修改後版本 - 與 PHP 後端 API 配合)
+// function.js (UI/UX 細化修改)
 document.addEventListener('DOMContentLoaded', function() {
     // 初始化变量
     let quizQuestions = [];
     let currentQuestionIndex = 0;
-    let userAnswers = []; // 儲存使用者對每個問題的答案陣列 (例如 [['A'], ['B', 'C'], ...])
+    let userAnswers = [];
     let reviewDetails = [];
     let timerInterval;
     let startTime;
@@ -35,6 +35,42 @@ document.addEventListener('DOMContentLoaded', function() {
     const jumpBtn = document.getElementById('jumpBtn');
     const initialPromptContainer = document.getElementById('initial-prompt-container');
 
+    // 新增：通用訊息提示元素 (可以加在 HTML 的某個固定位置)
+    const messageContainer = document.createElement('div');
+    messageContainer.id = 'toast-message-container';
+    document.body.appendChild(messageContainer);
+
+
+    // --- UI Helper Functions ---
+    function showLoading(button, text = '處理中...') {
+        if (button) {
+            button.disabled = true;
+            button.innerHTML = `<span class="spinner"></span> ${text}`;
+        }
+    }
+
+    function hideLoading(button, originalText) {
+        if (button) {
+            button.disabled = false;
+            button.innerHTML = originalText;
+        }
+    }
+
+    function showToast(message, type = 'info', duration = 3000) {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
+        messageContainer.appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.add('fade-out');
+            setTimeout(() => {
+                if (toast.parentNode) { // 再次檢查以防萬一
+                    messageContainer.removeChild(toast);
+                }
+            }, 500); // 等待淡出動畫完成
+        }, duration);
+    }
 
     // 事件监听器
     if (startBtn) startBtn.addEventListener('click', startQuiz);
@@ -46,9 +82,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (backToResultsBtn) backToResultsBtn.addEventListener('click', backToResults);
 
     if (jumpBtn && jumpInput) {
-        jumpBtn.addEventListener('click', function() {
+        const performJump = () => {
             if (quizQuestions.length === 0) {
-                alert('題目尚未載入完成。');
+                showToast('題目尚未載入完成。', 'warning');
                 return;
             }
             const val = parseInt(jumpInput.value, 10);
@@ -56,7 +92,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentQuestionIndex = val - 1;
                 showQuestion(currentQuestionIndex);
             } else {
-                alert(`請輸入 1 到 ${quizQuestions.length} 之間的題號。`);
+                showToast(`請輸入 1 到 ${quizQuestions.length} 之間的題號。`, 'error');
+            }
+        };
+        jumpBtn.addEventListener('click', performJump);
+        jumpInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // 防止表單提交 (如果有的話)
+                performJump();
             }
         });
     }
@@ -71,7 +114,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function startQuiz() {
-        if (startBtn) startBtn.style.display = 'none';
+        const originalStartBtnText = startBtn.textContent;
+        showLoading(startBtn, '載入中...');
+
         if (initialPromptContainer) initialPromptContainer.classList.add('hidden');
         if (quizContainer) quizContainer.classList.remove('hidden');
 
@@ -86,42 +131,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error("未定義測驗類型 (currentQuizType)，無法載入題目。");
             }
 
-            // 使用在 quiz.php 中定義的 fetchQuestions 函數
             const response = await new Promise((resolve, reject) => {
                 if (typeof window.fetchQuestions === 'function') {
-                    window.fetchQuestions(resolve); // resolve 將接收 {data: [...], error?: "..."}
+                    window.fetchQuestions(resolve);
                 } else {
-                    reject(new Error("全域函數 fetchQuestions 未定義。請檢查 quiz.php。"));
+                    reject(new Error("全域函數 fetchQuestions 未定義。"));
                 }
             });
 
             if (response.error || !response.data || !Array.isArray(response.data)) {
                 let errorMsg = '無法載入題目資料：';
-                if (response.error) {
-                    errorMsg += response.error;
-                } else if (!response.data || response.data.length === 0) {
-                    errorMsg += '題庫可能為空或未返回題目。';
-                } else {
-                    errorMsg += '題庫格式錯誤。';
-                }
-                alert(errorMsg);
+                if (response.error) errorMsg += response.error;
+                else if (!response.data || response.data.length === 0) errorMsg += '題庫可能為空或未返回題目。';
+                else errorMsg += '題庫格式錯誤。';
+                
+                showToast(errorMsg, 'error', 5000);
                 if (questionText) questionText.textContent = '載入題目失敗，請返回選擇。';
-                if (startBtn) startBtn.style.display = '';
+                // UI 重置
                 if (initialPromptContainer) initialPromptContainer.classList.remove('hidden');
                 if (quizContainer) quizContainer.classList.add('hidden');
+                hideLoading(startBtn, originalStartBtnText);
                 return;
             }
             
-            // 從後端獲取的題目中隨機抽取50題，或全部（如果少於50題）
             quizQuestions = sampleArray(response.data, 50);
 
-
             if (quizQuestions.length === 0) {
-                alert('抽取的題目數量為0，請檢查題庫或題庫類型。');
+                showToast('抽取的題目數量為0，請檢查題庫或題庫類型。', 'warning', 5000);
                 if (questionText) questionText.textContent = '無可用題目，請返回選擇其他測驗。';
-                if (startBtn) startBtn.style.display = '';
                 if (initialPromptContainer) initialPromptContainer.classList.remove('hidden');
                 if (quizContainer) quizContainer.classList.add('hidden');
+                hideLoading(startBtn, originalStartBtnText);
                 return;
             }
 
@@ -132,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (progressEl) progressEl.textContent = `0 / ${quizQuestions.length}`;
             if (jumpInput) {
                 jumpInput.max = quizQuestions.length;
-                jumpInput.min = 1; // 確保最小值為1
+                jumpInput.min = 1;
                 jumpInput.value = "1";
             }
 
@@ -143,27 +183,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
             showQuestion(currentQuestionIndex);
             updateProgress();
+            showToast('測驗開始！', 'success');
 
         } catch (error) {
             console.error("開始測驗時載入題目失敗:", error);
+            showToast(`載入題目失敗：${error.message}`, 'error', 5000);
             if (questionText) questionText.innerHTML = `載入題目失敗：${error.message}<br>請檢查您的網路連線或聯繫管理員。`;
-            if (startBtn) startBtn.style.display = '';
             if (initialPromptContainer) initialPromptContainer.classList.remove('hidden');
             if (quizContainer) quizContainer.classList.add('hidden');
+        } finally {
+            hideLoading(startBtn, originalStartBtnText);
+             // 即使成功開始，startBtn 也應該保持隱藏或禁用，直到 restartQuiz
+            if (startBtn) startBtn.style.display = 'none';
         }
     }
 
     function renderMedia(container, mediaObject) {
         if (!container) return;
-        container.innerHTML = ''; // 清空舊內容
+        container.innerHTML = ''; 
 
-        if (!mediaObject || !mediaObject.data) {
+        if (!mediaObject || (!mediaObject.data && !mediaObject.src && typeof mediaObject !== 'string')) {
             return;
         }
+        
+        let mediaContent = mediaObject.data || mediaObject.src || mediaObject;
 
-        if (mediaObject.type === 'table' && Array.isArray(mediaObject.data)) {
+        if (mediaObject.type === 'table' && Array.isArray(mediaContent)) {
             const table = document.createElement('table');
-            mediaObject.data.forEach(rowDataArray => {
+            mediaContent.forEach(rowDataArray => {
                 if (Array.isArray(rowDataArray)) {
                     const rowElement = table.insertRow();
                     rowDataArray.forEach(cellContent => {
@@ -178,13 +225,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             container.appendChild(table);
-        } else if (mediaObject.type === 'image' && typeof mediaObject.data === 'string') { // 假設圖片路徑在 data 中
+        } else if (mediaObject.type === 'image' && typeof mediaContent === 'string') {
             const img = document.createElement('img');
-            img.src = mediaObject.data; // 或者 mediaObject.src 如果您的資料結構是這樣
+            img.src = mediaContent;
             img.alt = mediaObject.alt || '題目圖片';
             container.appendChild(img);
-        } else if (typeof mediaObject === 'string' && mediaObject.startsWith('<img')) { // 直接是 HTML 字符串
-             container.innerHTML = mediaObject;
+        } else if (typeof mediaContent === 'string' && mediaContent.trim().startsWith('<img')) {
+             container.innerHTML = mediaContent;
+        } else if (typeof mediaContent === 'string') { // 處理純文字媒體內容
+            const div = document.createElement('div');
+            div.innerHTML = mediaContent; // 如果媒體內容本身就是HTML，直接插入
+            container.appendChild(div);
         }
     }
 
@@ -201,7 +252,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (questionNumber) questionNumber.textContent = `題目 ${index + 1} / ${quizQuestions.length}`;
-        if (questionText) questionText.innerHTML = question.question; // 允許題目文字包含HTML
+        if (questionText) questionText.innerHTML = question.question;
 
         if (questionTypeEl) {
             if (question.type === 'single') {
@@ -232,13 +283,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 inputEl.type = inputType;
                 inputEl.name = inputName;
                 inputEl.value = option.value;
-                inputEl.id = `option-${index}-${option.value.replace(/[^a-zA-Z0-9-_]/g, '')}`; // 確保ID有效
+                inputEl.id = `option-${index}-${option.value.replace(/[^a-zA-Z0-9-_]/g, '')}`;
                 inputEl.checked = isSelected;
 
                 const labelEl = document.createElement('label');
                 labelEl.htmlFor = inputEl.id;
                 labelEl.className = 'option-text';
-                labelEl.innerHTML = `${option.value}. ${option.label}`; // 允許選項標籤包含HTML
+                labelEl.innerHTML = `${option.value}. ${option.label}`;
 
                 optionEl.appendChild(inputEl);
                 optionEl.appendChild(labelEl);
@@ -250,6 +301,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 optionEl.addEventListener('click', function(event) {
                     const clickedInput = this.querySelector('input');
                     if (!clickedInput) return;
+                    
+                    // 手動同步 input 的 checked 狀態 (對 checkbox 特別重要)
+                    if (question.type === 'multiple') {
+                        if (event.target !== clickedInput) { // 如果點擊的是 div 或 label
+                            clickedInput.checked = !clickedInput.checked;
+                        }
+                    }
+
 
                     if (question.type === 'single') {
                         userAnswers[index] = [clickedInput.value];
@@ -265,12 +324,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             userAnswers[index] = [];
                         }
                         const valueIndex = userAnswers[index].indexOf(value);
-                        if (clickedInput.checked) { // 如果點擊後是選中
+
+                        if (clickedInput.checked) {
                             if (valueIndex === -1) {
                                 userAnswers[index].push(value);
                             }
                             this.classList.add('selected');
-                        } else { // 如果點擊後是取消選中
+                        } else {
                             if (valueIndex > -1) {
                                 userAnswers[index].splice(valueIndex, 1);
                             }
@@ -284,7 +344,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (prevBtn) prevBtn.disabled = index === 0;
-        if (nextBtn) nextBtn.disabled = index === quizQuestions.length -1 && quizQuestions.length === 0;
+        if (nextBtn) nextBtn.disabled = (index === quizQuestions.length - 1 || quizQuestions.length === 0) ;
 
 
         if (index === quizQuestions.length - 1) {
@@ -294,13 +354,19 @@ document.addEventListener('DOMContentLoaded', function() {
             if (nextBtn) nextBtn.classList.remove('hidden');
             if (submitBtn) submitBtn.classList.add('hidden');
         }
-         if (jumpInput) jumpInput.value = index + 1; // 更新跳題框的數字
+        if (jumpInput) jumpInput.value = index + 1;
     }
 
     function updateProgress() {
         if (!progressEl || !quizQuestions || quizQuestions.length === 0) return;
         const answeredCount = userAnswers.filter(answer => answer && answer.length > 0).length;
         progressEl.textContent = `${answeredCount} / ${quizQuestions.length}`;
+        // 可以考慮更新視覺進度條
+        const progressBar = document.getElementById('progress-bar-fill'); // 假設你有一個進度條元素
+        if (progressBar) {
+            const percentage = quizQuestions.length > 0 ? (answeredCount / quizQuestions.length) * 100 : 0;
+            progressBar.style.width = `${percentage}%`;
+        }
     }
 
     function goToNextQuestion() {
@@ -330,23 +396,19 @@ document.addEventListener('DOMContentLoaded', function() {
         clearInterval(timerInterval);
     }
 
-    // 提交測試 - 修改為一次性非同步驗證
     async function submitQuiz() {
         const unansweredIndexes = userAnswers
             .map((ans, idx) => (!ans || (Array.isArray(ans) && ans.length === 0)) ? idx + 1 : null)
             .filter(idx => idx !== null);
 
         if (unansweredIndexes.length > 0) {
-            alert(`請完成所有題目才能提交！\n尚未作答題號：${unansweredIndexes.join(', ')}`);
+            showToast(`請完成所有題目才能提交！\n尚未作答題號：${unansweredIndexes.join(', ')}`, 'warning', 5000);
             return;
         }
         stopTimer();
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.textContent = '提交中...';
-        }
+        const originalSubmitBtnText = submitBtn.textContent;
+        showLoading(submitBtn, '提交中...');
 
-        // 準備要發送到後端的資料
         const answersToSubmit = quizQuestions.map((question, index) => {
             return {
                 id: question.id,
@@ -355,45 +417,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         try {
-            // 使用在 quiz.php 中定義的 checkAnswer 函數
-            // 這個全域 checkAnswer 函數內部應該處理 fetch 到 api/check_answer.php
-            const backendResults = await new Promise((resolve, reject) => {
-                if (typeof window.checkAllAnswers === 'function') { // 假設有一個新的全域函數來處理批量驗證
-                    window.checkAllAnswers(answersToSubmit, resolve); // resolve 將接收後端返回的結果陣列
-                } else {
-                     // Fallback or error if the specific batch function isn't defined
-                     // For now, let's assume the old quiz.php checkAnswer can be adapted or a new one is made
-                    console.warn("window.checkAllAnswers is not defined. Attempting to use a modified checkAnswer or assuming it's handled in quiz.php");
-                    // This part needs to be robust. For this example, I'll proceed assuming quiz.php's
-                    // `checkAnswer` or a new function `checkAllAnswers` will be called and will
-                    // POST the `answersToSubmit` to the modified `api/check_answer.php`.
-                    // The backend `api/check_answer.php` now expects `quiz_type` and `answers` array.
-                    fetch(`api/check_answer.php`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({
-                            quiz_type: currentQuizType, // currentQuizType 應該是全域可訪問的
-                            answers: answersToSubmit
-                        })
-                    })
-                    .then(res => {
-                        if (!res.ok) return res.text().then(text => { throw new Error(`驗證答案失敗 (${res.status}): ${text.substring(0,100)}`) });
-                        return res.json();
-                    })
-                    .then(data => resolve(data)) // data 應該是後端返回的結果陣列
-                    .catch(error => reject(error));
-                }
+            const backendResults = await fetch(`api/check_answer.php`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    quiz_type: currentQuizType,
+                    answers: answersToSubmit
+                })
+            })
+            .then(res => {
+                if (!res.ok) return res.text().then(text => { throw new Error(`驗證答案失敗 (${res.status}): ${text.substring(0,200)}`) });
+                return res.json();
             });
-
 
             if (!Array.isArray(backendResults)) {
                 throw new Error("後端返回的答案驗證結果格式不正確。");
             }
 
             let correctCount = 0;
-            reviewDetails = []; // 清空/初始化複習詳情
+            reviewDetails = [];
 
-            // 根據後端返回的批量結果處理
             backendResults.forEach(result => {
                 const questionIndex = quizQuestions.findIndex(q => q.id === result.id);
                 if (questionIndex > -1) {
@@ -401,7 +444,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (result.correct) {
                         correctCount++;
                     }
-                    reviewDetails[questionIndex] = { // 使用原始順序儲存
+                    reviewDetails[questionIndex] = {
                         questionId: question.id,
                         questionText: question.question,
                         media: question.media,
@@ -410,13 +453,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         correctAnswer: result.actualAnswer || [],
                         isCorrect: result.correct,
                         type: question.type,
-                        error: result.error // 如果後端在單個題目上報告了錯誤
+                        error: result.error
                     };
                 } else {
                     console.warn(`從後端收到的結果中找不到對應的前端題目ID: ${result.id}`);
                 }
             });
-
 
             const finalScore = quizQuestions.length > 0 ? Math.round((correctCount / quizQuestions.length) * 100) : 0;
             const endTime = new Date();
@@ -431,31 +473,23 @@ document.addEventListener('DOMContentLoaded', function() {
             if (timeTaken) timeTaken.textContent = `用時: ${minutes}分 ${seconds}秒`;
 
             let summaryText = '';
-            if (finalScore >= 90) {
-                summaryText = '表現優異！';
-            } else if (finalScore >= 70) {
-                summaryText = '做得不錯！';
-            } else if (finalScore >= 60) {
-                summaryText = '還有進步空間。';
-            } else {
-                summaryText = '再接再厲！';
-            }
+            if (finalScore >= 90) summaryText = '表現優異！太棒了！';
+            else if (finalScore >= 70) summaryText = '做得不錯！接近完美！';
+            else if (finalScore >= 60) summaryText = '恭喜通過！再接再厲！';
+            else summaryText = '差一點，別灰心，下次會更好！';
             if (resultsSummary) resultsSummary.textContent = summaryText;
+            showToast('答案已提交！查看您的結果。', 'success');
 
         } catch (error) {
             console.error("提交答案過程中發生嚴重錯誤:", error);
-            alert("提交答案過程中發生錯誤。\n" + error.message);
+            showToast(`提交答案出錯：${error.message}`, 'error', 5000);
             if (quizContainer) quizContainer.classList.add('hidden');
             if (resultsContainer) resultsContainer.classList.remove('hidden');
             if (scoreDisplay) scoreDisplay.textContent = `得分計算出錯，請聯繫管理員。`;
         } finally {
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.textContent = '提交答案';
-            }
+            hideLoading(submitBtn, originalSubmitBtnText);
         }
     }
-
 
     function showReview() {
         if (resultsContainer) resultsContainer.classList.add('hidden');
@@ -464,18 +498,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
         let hasErrorsToShow = false;
         if (reviewDetails && reviewDetails.length > 0) {
-             // 確保 reviewDetails 是按題目原始順序排列的
             quizQuestions.forEach((originalQuestion, index) => {
-                const detail = reviewDetails.find(rd => rd && rd.questionId === originalQuestion.id); // 根據 ID 查找
+                const detail = reviewDetails.find(rd => rd && rd.questionId === originalQuestion.id);
 
-                if (!detail || detail.isCorrect) {
-                     // 如果想顯示所有題目，包括答對的，可以在此處添加邏輯
-                    return; // 目前：只顯示錯誤的題目
-                }
-                hasErrorsToShow = true;
+                if (!detail) return; // 如果沒有這題的 review detail，跳過
+
+                // 修改：即使答對也顯示，但錯誤的題目會有不同樣式
+                // if (detail.isCorrect) return; // 原只顯示錯誤題目
+
+                hasErrorsToShow = true; // 只要有題目就顯示
 
                 const typeText = detail.type === 'single' ? '單選題' : '複選題';
-                const optionsText = Array.isArray(detail.options) ? detail.options.map(opt => `${opt.value}. ${opt.label}`).join('<br>') : '選項資料錯誤';
+                const optionsText = Array.isArray(detail.options) ? detail.options.map(opt => {
+                    let labelClass = "";
+                    if (!detail.isCorrect && Array.isArray(detail.userAnswer) && detail.userAnswer.includes(opt.value)) {
+                        labelClass = "user-selected-wrong"; // 標記使用者選錯的
+                    }
+                    if (Array.isArray(detail.correctAnswer) && detail.correctAnswer.includes(opt.value)) {
+                        labelClass += " correct-option-highlight"; // 高亮正確選項
+                    }
+                    return `<span class="${labelClass}">${opt.value}. ${opt.label}</span>`;
+                }).join('<br>') : '選項資料錯誤';
+
                 const userAnswerText = Array.isArray(detail.userAnswer) && detail.userAnswer.length > 0 ? detail.userAnswer.join(', ') : '未作答';
                 const correctAnswerText = Array.isArray(detail.correctAnswer) ? detail.correctAnswer.join(', ') : 'N/A';
 
@@ -495,17 +539,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     ${mediaContentHTML}
                     <div class="review-options"><b>選項：</b><br>${optionsText}</div>
                     <div class="review-answers">
-                        <div><b>您的答案：</b><span class="user-answer">${userAnswerText}</span></div>
+                        <div><b>您的答案：</b><span class="user-answer ${detail.isCorrect ? '' : 'user-answer-incorrect'}">${userAnswerText}</span></div>
                         <div><b>正確答案：</b><span class="correct-answer">${correctAnswerText}</span></div>
                     </div>
-                    <div class="review-status">${detail.isCorrect ? '✓ 正確' : `✗ 錯誤 ${detail.error ? `(${detail.error})` : ''}`}</div>
+                    <div class="review-status">${detail.isCorrect ? '<span class="status-correct">✓ 正確</span>' : `<span class="status-incorrect">✗ 錯誤</span> ${detail.error ? `(${detail.error})` : ''}`}</div>
+                    ${(detail.explanation && !detail.isCorrect) ? `<div class="review-explanation"><b>詳解：</b>${detail.explanation}</div>` : ''}
                 `;
                 if (reviewList) reviewList.appendChild(reviewItem);
             });
         }
 
         if (!hasErrorsToShow && reviewList) {
-            reviewList.innerHTML = '<p>太棒了！所有題目都答對了，或者沒有可供檢視的錯誤題目。</p>';
+            reviewList.innerHTML = '<p>太棒了！所有題目都答對了，或者沒有可供檢視的題目。</p>';
         }
     }
 
@@ -522,32 +567,49 @@ document.addEventListener('DOMContentLoaded', function() {
         if (quizContainer) quizContainer.classList.add('hidden');
         if (resultsContainer) resultsContainer.classList.add('hidden');
         if (reviewContainer) reviewContainer.classList.add('hidden');
-        if (initialPromptContainer) initialPromptContainer.classList.remove('hidden');
+        if (initialPromptContainer) {
+            initialPromptContainer.classList.remove('hidden');
+            // 可以更新 initialPromptContainer 中的題目數量提示 (如果需要)
+            const quizTypeH2 = initialPromptContainer.querySelector('h2');
+            if (quizTypeH2 && typeof currentQuizType !== 'undefined') {
+                 // 假設 h2 內容是 "準備開始【測驗類型】練習！"
+                 // 你可能需要從 quiz.php 獲取 $quiz_type_name
+            }
+        }
+
 
         if (startBtn) {
             startBtn.style.display = '';
-            startBtn.disabled = false;
+            // startBtn.disabled = false; // 在 startQuiz 開始時才禁用
             let quizTypeName = '';
             if (typeof currentQuizType !== 'undefined') {
-                // 這裡的 quiz_type_name 獲取邏輯需要與 quiz.php 中的保持一致
                 if (currentQuizType === 'web') quizTypeName = '網站管理實務';
                 else if (currentQuizType === 'project') quizTypeName = '專案管理';
                 else if (currentQuizType === 'linux') quizTypeName = 'linux系統';
                 else if (currentQuizType === 'database') quizTypeName = '資料庫管理';
+                // 注意：這裡的 quizTypeName 應該與 quiz.php 中的 $quiz_type_name 邏輯一致
             }
-            startBtn.textContent = quizTypeName ? `開始 ${quizTypeName} 測驗` : '開始測驗';
+            // 確保按鈕文字被重置
+            const originalText = quizTypeName ? `開始 ${quizTypeName} 測驗` : '開始測驗';
+            hideLoading(startBtn, originalText); // 使用 hideLoading 重置按鈕狀態和文字
         }
+
 
         if (questionText) questionText.innerHTML = '';
         if (optionsContainer) optionsContainer.innerHTML = '';
         if (mediaContainer) mediaContainer.innerHTML = '';
         if (questionNumber) questionNumber.textContent = '';
         if (progressEl) progressEl.textContent = "0 / 0";
-        if (jumpInput) jumpInput.value = "";
+        if (jumpInput) jumpInput.value = "1"; // 重置跳題到第1題
+
+        const progressBar = document.getElementById('progress-bar-fill');
+        if (progressBar) progressBar.style.width = '0%';
+
 
         currentQuestionIndex = 0;
         quizQuestions = [];
         userAnswers = [];
         reviewDetails = [];
+        showToast('測驗已重置。', 'info');
     }
 });

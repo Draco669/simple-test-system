@@ -119,8 +119,10 @@ endif;
     </style>
 </head>
 <body>
+    <div class="fixed-nav-buttons">
+        <a href="index.php?logout=1" class="nav-button">登出 (<?php echo htmlspecialchars($_SESSION['login_user']); ?>)</a>
+    </div>
     <div class="container">
-        <a href="index.php?logout=1" class="logout-link">登出 (<?php echo htmlspecialchars($_SESSION['login_user']); ?>)</a>
         <header>
             <h1>證照練習系統</h1>
         </header>

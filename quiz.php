@@ -52,14 +52,19 @@ $page_title = $quiz_type_name . ' - 測驗準備';
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="fixed-nav-buttons">
+        <a href="index.php" class="nav-button">返回選擇</a>
+        <a href="index.php?logout=1" class="nav-button">登出 (<?php echo htmlspecialchars($_SESSION['login_user']); ?>)</a>
+    </div>
+<div class="container">
         <header>
             <h1>證照練習系統 - <?php echo htmlspecialchars($quiz_type_name); ?></h1>
-            <a href="index.php?logout=1" style="float:right; margin-left: 10px;">登出 (<?php echo htmlspecialchars($_SESSION['login_user']); ?>)</a>
-            <a href="index.php" style="float:right;">返回選擇</a>
             <div class="controls">
                 <button id="startBtn">開始 <?php echo htmlspecialchars($quiz_type_name); ?> 測驗</button>
                 <span id="progress">0 / 0</span>
+                <div class="progress-bar-container" style="width: 200px; display: inline-block; vertical-align: middle;">
+                    <div id="progress-bar-fill"></div>
+                </div>
                 <span id="timer">00:00</span>
             </div>
         </header>
@@ -70,7 +75,8 @@ $page_title = $quiz_type_name . ' - 測驗準備';
                 <p>準備好後，請點擊上方的「開始 <?php echo htmlspecialchars($quiz_type_name); ?> 測驗」按鈕開始作答。</p>
             </div>
 
-            <div id="quiz-container" class="hidden"> <div id="question-number">題目 1 / X</div>
+            <div id="quiz-container" class="hidden">
+                <div id="question-number">題目 1 / X</div>
                 <div class="question-jump-bar">
                     題號: <input type="number" id="jumpInput" min="1" style="width:50px;">
                     <button id="jumpBtn">跳</button>
@@ -103,8 +109,7 @@ $page_title = $quiz_type_name . ' - 測驗準備';
         </main>
         <footer>
             <p><b>Powered By hanyg.z</b></p>
-            <p><b>nlnlouo</p></b>
-        </footer>
+            <p><b>nlnlouo</b></p> </footer>
     </div>
 
     <script>
