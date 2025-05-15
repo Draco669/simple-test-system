@@ -275,63 +275,81 @@ document.addEventListener('DOMContentLoaded', function() {
                 optionEl.className = 'option';
                 const inputType = question.type === 'single' ? 'radio' : 'checkbox';
                 const inputName = `question${index}`;
-
+        
                 const currentAnswerForQuestion = userAnswers[index] || [];
                 const isSelected = currentAnswerForQuestion.includes(option.value);
-
+        
                 const inputEl = document.createElement('input');
                 inputEl.type = inputType;
                 inputEl.name = inputName;
                 inputEl.value = option.value;
+                // 確保 ID 對應 label 的 for 屬性，並且是唯一的
                 inputEl.id = `option-${index}-${option.value.replace(/[^a-zA-Z0-9-_]/g, '')}`;
                 inputEl.checked = isSelected;
-
+        
                 const labelEl = document.createElement('label');
-                labelEl.htmlFor = inputEl.id;
+                labelEl.htmlFor = inputEl.id; // ***** 關鍵：確保 label 指向 input *****
                 labelEl.className = 'option-text';
                 labelEl.innerHTML = `${option.value}. ${option.label}`;
-
+        
                 optionEl.appendChild(inputEl);
                 optionEl.appendChild(labelEl);
-
+        
                 if (isSelected) {
                     optionEl.classList.add('selected');
                 }
-
+        
+                // 事件監聽器綁定在整個 optionEl (div) 上
                 optionEl.addEventListener('click', function(event) {
-                    const clickedInput = this.querySelector('input');
+                    const clickedInput = this.querySelector('input'); // 獲取內部的 input
                     if (!clickedInput) return;
-                    
-                    // 手動同步 input 的 checked 狀態 (對 checkbox 特別重要)
-                    if (question.type === 'multiple') {
-                        if (event.target !== clickedInput) { // 如果點擊的是 div 或 label
-                            clickedInput.checked = !clickedInput.checked;
+        
+                    // 1. 手動觸發 input 的狀態變化 (如果它還沒變化)
+                    //    對於 radio，點擊其他選項時，瀏覽器會自動取消之前選中的。
+                    //    對於 checkbox，點擊 label 或 input 都會切換其 checked 狀態。
+                    //    但為了確保邏輯一致，我們可以顯式地處理。
+        
+                    if (event.target !== clickedInput) { // 如果點擊的不是 input 本身 (而是 div 或 label)
+                        if (question.type === 'single') {
+                            // 對於單選，如果點擊的是 label 或 div，input 的狀態可能已經由 label 的 for 屬性觸發了
+                            // 但為了確保，我們可以強制選中它
+                            clickedInput.checked = true;
+                        } else {
+                            // 對於多選，點擊 label 或 div 也會觸發 input 的 checked 狀態切換
+                            // 所以這裡我們需要根據 *點擊後* 的狀態來更新我們的 userAnswers
+                            // clickedInput.checked = !clickedInput.checked; // 這行是多餘的，因為瀏覽器會處理
                         }
                     }
-
-
+        
+        
+                    // 2. 更新 userAnswers 陣列和 UI
                     if (question.type === 'single') {
-                        userAnswers[index] = [clickedInput.value];
-                        document.querySelectorAll(`#options-container .option`).forEach(opt => {
-                            opt.classList.remove('selected');
-                            opt.querySelector('input').checked = false;
-                        });
-                        this.classList.add('selected');
-                        clickedInput.checked = true;
-                    } else {
+                        // 如果 inputEl.checked 已经是 true (通常是，因为点击事件会先改变它)
+                        if (clickedInput.checked) {
+                            userAnswers[index] = [clickedInput.value];
+                            document.querySelectorAll(`#options-container .option`).forEach(opt => {
+                                opt.classList.remove('selected');
+                                // 對於 radio，確保只有一個被選中
+                                if (opt !== this) {
+                                   opt.querySelector('input').checked = false;
+                                }
+                            });
+                            this.classList.add('selected');
+                        }
+                    } else { // 多選題
                         const value = clickedInput.value;
                         if (!Array.isArray(userAnswers[index])) {
                             userAnswers[index] = [];
                         }
                         const valueIndex = userAnswers[index].indexOf(value);
-
-                        if (clickedInput.checked) {
-                            if (valueIndex === -1) {
+        
+                        if (clickedInput.checked) { // 如果當前 input 是選中狀態
+                            if (valueIndex === -1) { // 且尚未在答案中
                                 userAnswers[index].push(value);
                             }
                             this.classList.add('selected');
-                        } else {
-                            if (valueIndex > -1) {
+                        } else { // 如果當前 input 是未選中狀態
+                            if (valueIndex > -1) { // 且在答案中
                                 userAnswers[index].splice(valueIndex, 1);
                             }
                             this.classList.remove('selected');
